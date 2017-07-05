@@ -46,7 +46,7 @@ def import_data(in_file):
 
     for line in reader:
         ori_list.append(line)
-    return ori_list
+    return ori_list[1:]
 
 def convolution(in_file,out_file):
     
@@ -113,19 +113,20 @@ def convolution(in_file,out_file):
             result_list.append(curr_list)
             
     
-    feature_sel = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31]
+    feature_sel = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30]
     feature_name = ["qryNum","ansNum","qryType","rcode","respPktSize","domNameLen","respTime",\
         "success","nxDomain","distASN","distCountry","distNet","meanTTL","stdTTL","distTTL","totalTTL","TTL0","TTL1","TTL10","TTL100","TTL300","TTL900up",\
         "distanceBtwIP","entTimezone",\
         "qryType Seq","rcode Seq","success Seq","NXDomain Seq","period","hour","ip"]
 
-    for i in feature_sel:
-        string = ",".join(feature_name[i])+'\n'
+
+    feature_name = [feature_name[i] for i in feature_sel]
+    string = ",".join(feature_name)+'\n'
     fw.write(string)
 
     for line in result_list:
-        for i in feature_sel:
-            string = ",".join(line[i])+'\n'    
+        line = [str(line[i]) for i in feature_sel]
+        string = ",".join(line)+'\n'    
         fw.write(string)
 
     for i in conv_dict:

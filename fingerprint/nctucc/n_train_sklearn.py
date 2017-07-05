@@ -175,7 +175,6 @@ def sklearn_train(train,test):
     for label in all_class:
         k = kurt_list[label]
         label_ip = ip_le.inverse_transform([label])[0]
-        #print("label:",label," ip:",ip_le.inverse_transform([label])[0])
         k_norm.append(k[0]/kurt_max)
         k_r_norm.append(k[1]/kurt_r_max)
         if k[0] > -3:  
@@ -211,7 +210,7 @@ def sklearn_train(train,test):
                     conf_wrg += 1
                 elif tag == 'unknown':
                     conf_unk += 1
-            elif (k_r_norm[label]) < 0.5:
+            elif (k_norm[label]) < 0.5:
                 print(label_ip,'belongs to user ',k[2],k_norm[label],'max prob=',k[3],'\t',"undetermined")
                 unconf += 1
                 undeter+=1

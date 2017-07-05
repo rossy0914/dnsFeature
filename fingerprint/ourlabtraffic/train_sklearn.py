@@ -113,7 +113,7 @@ def sklearn_train(train,test):
         #NuSVC(decision_function_shape='ovo',nu=0.001,class_weight='balanced'),\
         #SVC(decision_function_shape='ovo',class_weight='balanced')
         RandomForestClassifier(n_estimators=100),\
-        #AdaBoostClassifier(n_estimators=100, algorithm='SAMME'),\
+        #AdaBoostClassifier(RandomForestClassifier(n_estimators=100),n_estimators=100, algorithm='SAMME'),\
         #KNeighborsClassifier(n_neighbors=10,leaf_size=10),\
         #xgb.XGBClassifier(n_estimators=100),\
         #KMeans(n_clusters=15)

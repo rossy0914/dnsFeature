@@ -80,7 +80,7 @@ def pcap2txt(pcap_file, txt_file):
             -e dns.flags.response -e dns.flags.rcode \
             -e dns.resp.ttl \
             -e dns.count.queries -e dns.count.answers\
-            -T fields -E separator=';' > %s" %(pcap_file, txt_file) #seperator","
+            -T fields -E separator=';' > %s" %(pcap_file, txt_file) 
             
     print(cmd)
     subprocess.call(cmd, shell=True)
@@ -247,15 +247,14 @@ def feature(in_file):
         else:
             for n in range(14,24):
                 dns_dict[dnsid][n] = 0
-
-    for i in feature_sel:
-        string = ",".join(i) + '\n'
+    feature_name = [feature_name[i] for i in feature_sel]
+    string = ",".join(feature_name) + '\n'
     fw.write(string)
 
     for key in sorted(dns_dict,key = lambda x : dns_dict[x][26]):
         if dns_dict[key][7]>0 :
-            for i in feature_sel:
-                string = ",".join(dns_dict[key][i])+'\n' 
+            dns_dict[key] = [str(dns_dict[key][i]) for i in feature_sel]
+            string = ",".join(dns_dict[key])+'\n' 
             fw.write(string)
 
     fp.close()
