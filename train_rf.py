@@ -27,32 +27,7 @@ def sklearn_train(train,test):
 
     train_df = pd.DataFrame(pd.read_csv(train,low_memory=False))    
     test_df = pd.DataFrame(pd.read_csv(test,low_memory=False))
-    del train_df['0']
-    del train_df['trun flag Seq']
-    del test_df['0']
-    del test_df['trun flag Seq']
-    '''
-    ip_train = np.unique(np.array(train_df['ip']))
-    print(ip_train)
-    ip_test = np.unique(np.array(test_df['ip']))
-    print(ip_test)
-    for ip in ip_train:
-        print(ip,len(train_df[train_df['ip']==ip]))
-        if ip not in ip_test and len(train_df[train_df['ip']==ip]) < 100:
-            train_df = train_df[train_df['ip']!=ip]
-            print("removed ",ip)
-    '''
     
-    train_df = train_df[train_df['ip'] != '185.94.111.1']
-    train_df = train_df[train_df['ip'] != '124.232.142.220']
-    test_df = test_df[test_df['ip'] != '185.94.111.1']
-    test_df = test_df[test_df['ip'] != '124.232.142.220']
-    
-    '''
-    #testing unknown label...
-    train_df = train_df[train_df['ip'] != rem_ip]
-    print("ip: ", rem_ip," is removed.")
-    '''
     print("Label encoding...")
     ip_le = LabelEncoder()
     all_class = list()
@@ -67,19 +42,22 @@ def sklearn_train(train,test):
             if col == 'ip':
                 ip_le = le
                 all_class = le.transform(np.unique(data))
-                print(len(np.unique(data)))
  
-    X_train = np.array(train_df[[0,1,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29]])
+    feature_name = ["qryNum","ansNum","qryType","rcode","respPktSize","domNameLen","respTime",\
+        "success","nxDomain","distASN","distCountry","distNet","meanTTL","stdTTL","distTTL","totalTTL","TTL0","TTL1","TTL10","TTL100","TTL300","TTL900up",\
+        "distanceBtwIP","entTimezone",\
+        "qryType Seq","rcode Seq","success Seq","NXDomain Seq","period","hour","ip"]
+    X_train = np.array(train_df[[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28]])
     y_train = np.array(train_df['ip'])
-    X_test = np.array(test_df[[0,1,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29]])
+    X_test = np.array(test_df[[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28]])
     y_test = np.array(test_df['ip'])
    
     train_class = list(np.unique(y_train))
     test_class = list(np.unique(y_test))
     print(train_class)
-    print("len:",len(train_class))
+    print("train class len:",len(train_class))
     print(test_class)
-    print("len:",len(test_class))
+    print("test class len:",len(test_class))
     print("all class:",all_class)
 
     for i in train_class:
@@ -90,17 +68,12 @@ def sklearn_train(train,test):
             
 
     rf_clf = RandomForestClassifier(n_estimators=100,criterion = 'gini',warm_start = 'True')
-    #rf_clf = xgboost.XGBClassifier(max_depth=5,learning_rate=0.5,n_estimators=100)
     print("Fitting random forest...")
-    #print("Fitting XGBoost...")
-    #y_train = ip_le.inverse_transform(y_train)
-    #y_test = ip_le.inverse_transform(y_test)
     rf_clf = rf_clf.fit(X_train, y_train)
     print("parameters: ",rf_clf.get_params())
     score = rf_clf.score(X_test, y_test)
     print("Score: ", score)
     
-    '''
     importances = rf_clf.feature_importances_
     std = np.std([tree.feature_importances_ for tree in rf_clf.estimators_], axis=0)
     indices = np.argsort(importances)[::-1]
@@ -110,7 +83,6 @@ def sklearn_train(train,test):
 
     for f in range(X_train.shape[1]):
         print("%d. feature %d (%f)" % (f + 1, indices[f], importances[indices[f]]))
-    '''
     y_predict = rf_clf.predict(X_test)
     #print(y_predict)
     #y_test = ip_le.inverse_transform(y_test)
@@ -170,8 +142,10 @@ def sklearn_train(train,test):
     kurt_min = min(kurt_list,key=lambda item:item[0])[0]
     kurt_r_max = max(kurt_list,key=lambda item:item[1])[1]
     kurt_r_min = min(kurt_list,key=lambda item:item[1])[1]
-    #print("min:",kurt_min,", max:",kurt_max)
-    #print("r min:",kurt_r_min,", max:",kurt_r_max)
+    
+    clf_label = dict()
+    conf_label = dict()
+
     for label in all_class:
         k = kurt_list[label]
         label_ip = ip_le.inverse_transform([label])[0]
@@ -204,6 +178,8 @@ def sklearn_train(train,test):
                 fw_wrg.write(str(k_norm[label])+'\t'+str(k_r_norm[label])+'\t'+str(k[2])+'\n')
             if (k_norm[label]) > 0.8 :
                 print(label_ip,'belongs to user ',k[2],k_norm[label],'max prob=',k[3],'\t',"confident")
+                clf_label[label_ip] = ip_le.inverse_transform(k[2])[0]
+                conf_label[label_ip] = ip_le.inverse_transform(k[2])[0]
                 if tag == 'correct':
                     conf_cor += 1
                     weight_conf += len(y_test[y_test == label])/len(y_test)
@@ -213,10 +189,12 @@ def sklearn_train(train,test):
                     conf_unk += 1
             elif (k_r_norm[label]) < 0.5:
                 print(label_ip,'belongs to user ',k[2],k_norm[label],'max prob=',k[3],'\t',"undetermined")
+                clf_label[label_ip] = ip_le.inverse_transform(k[2])[0]
                 unconf += 1
                 undeter+=1
             else:
                 print(label_ip,'belongs to user ',k[2],k_norm[label],'max prob=',k[3],'\t',"probably unknown")
+                clf_label[label_ip] = ip_le.inverse_transform(k[2])[0]
                 unconf+=1
                 if tag == 'correct':
                     deter_cor += 1
@@ -255,7 +233,11 @@ def sklearn_train(train,test):
     #print("wrong % in not confident",(len(wrg)-conf_wrg)/unconf)
     #print("unknown % in not confident",(len(unk)-conf_unk)/unconf)
     
-   
+    result_df = pd.DataFrame(np.concatenate((y_test, y_predict.T), axis=1),columns=feature_name)
+    for ip in clf_dict:
+        result_df[result_df['ip']==ip]['ip'] = clf_dict[ip]
+    
+
     print("----------")
 
     fw_cor.close()
